@@ -96,6 +96,7 @@ class Application(tornado.web.Application):
             ("/api/v1/application/([^/]*)$", ApplicationDataHandler),
             ("/api/v1/bioinfo_analysis", BioinfoAnalysisHandler),
             ("/api/v1/bioinfo_analysis/([^/]*)$", BioinfoAnalysisHandler),
+            ("/api/v1/bioinfo_history([^/]*)$", BioinfoHistoryHandler),
             ("/api/v1/expected", BarcodeVsExpectedDataHandler),
             tornado.web.URLSpec("/api/v1/caliper_image/(?P<project>[^/]+)/(?P<sample>[^/]+)/(?P<step>[^/]+)", CaliperImageHandler, name="CaliperImageHandler"),
             ("/api/v1/charon_summary/([^/]*)$",CharonProjectHandler ),

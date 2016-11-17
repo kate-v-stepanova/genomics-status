@@ -21,6 +21,7 @@
         <th class="bioinfo-app-applications" colspan="2">Applications (if applicable)</th>
       {% end %}
       <th>Data Delivered</th>
+      <th></th>
     </tr>
     <tr class="bioinfo-field-names bioinfo-project" id="bioinfo-project-{{ project_id }}">
       <th class="bioinfo-project"><a href="#bioinfo-project-{{ project_id }}" class="bioinfo-expand">
@@ -60,6 +61,7 @@
         <button class="btn btn-sm datepicker-today"{% if project_closed %} disabled="disabled"{% end %}>
           <i class="glyphicon glyphicon-arrow-down"></i></button>
       </th>
+      <th></th>
     </tr>
   </thead>
   <tbody>
@@ -106,6 +108,9 @@
                 <span class="input-group-addon datepicker-today"><i class="glyphicon glyphicon-arrow-down"></i></span>
               </div>
             </td>
+            <td class="bioinfo-status delete-entry">
+              <button class="btn btn-default btn-xs"><span class="glyphicon glyphicon-trash"></span></button>
+            </td>
         </tr>
         {% for lane_id, lane in sorted(flowcell['lanes'].items()) %}
           <tr class="bioinfo-lane  {% if lane.get('lane_status') in ['Demultiplexing', 'Transferring', 'Sequencing', 'ERROR', 'Failed', 'Delivered'] %} bioinfo-status-disabled {% end %}"
@@ -149,6 +154,9 @@
                 <span class="input-group-addon date-reset"><i class="glyphicon glyphicon-remove"></i></span>
                 <span class="input-group-addon datepicker-today"><i class="glyphicon glyphicon-arrow-down"></i></span>
               </div>
+            </td>
+            <td class="bioinfo-status delete-entry">
+              <button class="btn btn-default btn-xs"><span class="glyphicon glyphicon-trash"></span></button>
             </td>
           </tr>
           {% for sample_id, sample in sorted(lane['samples'].items()) %}
@@ -208,6 +216,9 @@
                     <span class="input-group-addon date-reset"><i class="glyphicon glyphicon-remove"></i></span>
                     <span class="input-group-addon datepicker-today"><i class="glyphicon glyphicon-arrow-down"></i></span>
                   </div>
+                </td>
+                <td class="bioinfo-status delete-entry">
+                  <button class="btn btn-default btn-xs"><span class="glyphicon glyphicon-trash"></span></button>
                 </td>
             </tr>
           {% end %}

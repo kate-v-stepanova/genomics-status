@@ -1226,3 +1226,33 @@ function disableParentDate(td) {
 $('#bioinfo-show-history-button').on('click', function(e){
     $('#bioinfo-show-history').modal();
 });
+
+
+$('td.delete-entry button').on('click', function(e){
+    var current_tr = $(this).closest('tr');
+    var tr_class = $(current_tr).attr('class').trim();
+    var tr_id = $(current_tr).attr('id').replace(tr_class+'-', '');
+    var global_project_id = $('#bioinfo-js').attr('data-project');
+    var to_delete = {'type': tr_class, 'key': tr_id};
+    console.log(tr_id);
+    $.ajax({
+        type: 'POST',
+        url: '/api/v1/bioinfo_history/' + global_project_id,
+        dataType: 'json',
+        data: JSON.stringify(to_delete),
+        error: function(xhr, textStatus, errorThrown) {
+            alert('There was an error saving the bioinformatics statuses: '+xhr['responseText']);
+            console.log(textStatus);
+            console.log(errorThrown);
+            console.log(xhr['responseText'])
+        },
+        success: function(saved_data, textStatus, xhr) {
+            console.log('success')
+            var trs = $(current_tr).nextUntil('tr.'+tr_class).remove();
+            $.each(trs, function(i, tr){
+                $(tr).remove();
+            })
+            $(current_tr).remove();
+        }
+    });
+});
