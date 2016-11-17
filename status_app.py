@@ -22,6 +22,7 @@ from status.applications import ApplicationDataHandler, ApplicationHandler, Appl
 from status.authorization import LoginHandler, LogoutHandler, UnAuthorizedHandler
 from status.barcode_vs_expected import BarcodeVsExpectedDataHandler, BarcodeVsExpectedPlotHandler, ExpectedHandler
 from status.bioinfo_analysis import BioinfoAnalysisHandler
+from status.bioinfo_history import BioinfoHistoryHandler
 from status.clusters_per_lane import ClustersPerLaneHandler, ClustersPerLanePlotHandler
 from status.deliveries import DeliveriesPageHandler
 from status.flowcell import FlowcellHandler
