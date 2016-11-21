@@ -1230,11 +1230,10 @@ $('#bioinfo-show-history-button').on('click', function(e){
 
 $('td.delete-entry button').on('click', function(e){
     var current_tr = $(this).closest('tr');
-    var tr_class = $(current_tr).attr('class').trim();
+    var tr_class = $(current_tr).attr('class').split(' ')[0].trim(); // in case there are more classes
     var tr_id = $(current_tr).attr('id').replace(tr_class+'-', '');
     var global_project_id = $('#bioinfo-js').attr('data-project');
     var to_delete = {'type': tr_class, 'key': tr_id};
-    console.log(tr_id);
     $.ajax({
         type: 'POST',
         url: '/api/v1/bioinfo_history/' + global_project_id,
@@ -1248,7 +1247,7 @@ $('td.delete-entry button').on('click', function(e){
         },
         success: function(saved_data, textStatus, xhr) {
             console.log('success')
-            var trs = $(current_tr).nextUntil('tr.'+tr_class).remove();
+            var trs = $(current_tr).nextUntil('tr.'+tr_class, 'tr.'+tr_class).remove();
             $.each(trs, function(i, tr){
                 $(tr).remove();
             })
