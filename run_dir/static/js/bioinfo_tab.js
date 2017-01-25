@@ -284,6 +284,16 @@ $('.table-bioinfo-status').on('click', 'th.bioinfo-status-th', function(e) {
     $(th).removeClass(th_status).addClass(new_status);
 
     // update sample status
+    if ($(this).closest('table').hasClass('bioinfo-status-runview')) {
+        var top_level_class = 'bioinfo-fc';
+    } else {
+        var top_level_class = 'bioinfo-sample';
+    }
+
+    // get only top flowcells (for runview) or samples (for sampleview) -> then checkSampleStatus works faster
+    tds = $(this).closest('table.table-bioinfo-status-runview:visible').find('tr.bioinfo-fc td.'+column_name);
+    $.merge(tds, $(this).closest('table.table-bioinfo-status-sampleview:visible').find('tr.bioinfo-sample td.'+column_name));
+
     $.each(tds, function(i, td){
         checkSampleStatus(td);
     });
@@ -315,28 +325,48 @@ $('.table-bioinfo-status-runview').on('click', 'tr:not(.bioinfo-status-disabled)
 
     // change children qc
     var child_trs = getAllChildTrs($(td).parent());
-    var child_tds = $(child_trs).children('td.'+td_class);
-    if (child_tds.length != 0) {
-        $(child_tds).removeClass(bioinfo_qc_classes.join(' ')).addClass(next_class).text(next_value);
+    if ($(td).parent().hasClass('bioinfo-sample')) {
+        child_trs = $(td).parent();
     }
+    var child_tds = $(child_trs).children('td.'+td_class);
 
-    // change selected samples on all other flowcells/lanes
-    var sample_trs = $(child_trs).filter('tr.bioinfo-sample');
-    sample_trs.push($(td).parent());
-    var table = $(td).closest('table.table-bioinfo-status');
-    $.each(sample_trs, function(i, sample_tr){
-        var sample_id = $(sample_tr).attr('id').split('-');
-        sample_id = sample_id[sample_id.length-1];
-        var sample_tds = $(table).find('tr.bioinfo-sample td:contains('+sample_id+')');
-        // find all rows in the table containing sample
-        var tds_to_change = $(sample_tds).parent().find('td.'+td_class);
-        $(tds_to_change).removeClass(bioinfo_qc_classes.join(' ')).addClass(next_class).text(next_value);
-        // update sample_status
-        $.each(tds_to_change, function(i, td_to_change) {
-            checkSampleStatus(td_to_change);
-        });
+    // get sample_ids
+    var sample_ids = $(child_tds).map(function(){
+        var sample_id = $(this).parent().attr('id').split('-');
+        return sample_id[sample_id.length-1];
     });
-    loadTable(table);
+
+    var table = $(td).closest('table.table-bioinfo-status');
+    // change selected samples on all other lanes/flowcells
+    var lane_ids = [];
+    $.each(sample_ids, function(i, sample_id) {
+        var trs_to_change = $(table).find('tr.bioinfo-sample td:contains('+sample_id+')').parent();
+        var tds_to_change = $(trs_to_change).find('td.'+td_class);
+        $(tds_to_change).removeClass(bioinfo_qc_classes.join(' ')).addClass(next_class).text(next_value);
+        $.each(tds_to_change, function(i, td){
+            checkSampleStatus(td, 'no_recursion');
+        });
+        // get lane_ids
+        lane_ids = $.merge(lane_ids, $(tds_to_change).map(function(){return $(this).parent().attr('data-parent')}));
+    });
+
+    // update lanes
+    lane_ids = $.unique(lane_ids);
+    var fc_ids = []
+    $.each(lane_ids, function(i, lane_id){
+        var lane_td = $(lane_id).find('td.'+td_class);
+        aggregateTdStatus(lane_td);
+        fc_ids.push($(lane_td).parent().attr('data-parent'));
+        checkSampleStatus(lane_td, 'no_recursion');
+    });
+
+    // update flowcells
+    fc_ids = $.unique(fc_ids);
+    $.each(fc_ids, function(i, fc_id){
+        var fc_td = $(fc_id).find('td.'+td_class);
+        aggregateTdStatus(fc_td);
+        checkSampleStatus(fc_td, 'no_recursion');
+    });
 });
 
 
@@ -373,7 +403,7 @@ $('.table-bioinfo-status-sampleview').on('click', 'tr:not(.bioinfo-status-disabl
     }
 });
 
-function checkSampleStatus(td){
+function checkSampleStatus(td, no_recursion){
     // update status of current row
     // update status of all children
     // update status of parent(s)
@@ -419,26 +449,30 @@ function checkSampleStatus(td){
         }
     }
 
-    // update child statuses
-    var tr_class = $(td).parent().attr('class').split(/\s+/)[0];
-    // exclude parent elements from selection
-    // handling the case if the last element of it's class is clicked
-    var parent_class = $(td).parent().attr('data-parent').split('-').splice(0, 2).join('-').replace('#', '');
-    if ($(td).closest('table').hasClass('table-bioinfo-status-sampleview')) {
-        if (parent_class != 'bioinfo-sample') {
-            parent_class += ',.bioinfo-sample';
-        }
-    } else {
-        if (parent_class != 'bioinfo-fc') {
-            parent_class += ',.bioinfo-fc';
-        }
-    }
-    var child_spans = $(td).parent().nextUntil('tr.' + tr_class, 'tr:not(.bioinfo-status-disabled,.'+parent_class+')').find('td.bioinfo-status-runstate span');
-    $(child_spans).removeClass(sample_classes.join(' ')).addClass(sample_statuses[new_status]).text(new_status);
     $(span).removeClass(sample_classes.join(' ')).addClass(sample_statuses[new_status]).text(new_status);
+    // this is for .bp click case of runview
+    if (no_recursion == undefined) {
+        // update child statuses
+        var tr_class = $(td).parent().attr('class').split(/\s+/)[0];
+        // exclude parent elements from selection
+        // handling the case if the last element of it's class is clicked
+        var parent_class = $(td).parent().attr('data-parent').split('-').splice(0, 2).join('-').replace('#', '');
+        if ($(td).closest('table').hasClass('table-bioinfo-status-sampleview')) {
+            if (parent_class != 'bioinfo-sample') {
+                parent_class += ',.bioinfo-sample';
+            }
+        } else {
+            if (parent_class != 'bioinfo-fc') {
+                parent_class += ',.bioinfo-fc';
+            }
+        }
+        var child_spans = $(td).parent().nextUntil('tr.' + tr_class, 'tr:not(.bioinfo-status-disabled,.'+parent_class+')').find('td.bioinfo-status-runstate span');
+        $(child_spans).removeClass(sample_classes.join(' ')).addClass(sample_statuses[new_status]).text(new_status);
 
-    // update parent status
-    setParentSpanStatus(span);
+        // update parent status
+        setParentSpanStatus(span);
+    }
+
 };
 
 
